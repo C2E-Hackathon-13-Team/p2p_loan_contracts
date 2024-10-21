@@ -13,7 +13,7 @@ describe("贷款合约",async function(){
     it("新增筹资项目", async function () {
         const largeNumber = BigInt(500000000000000000);
         await loan.createProject(
-            largeNumber ,40000,20,1732193392,1
+            largeNumber ,40000,50,1732193392,1
         );
 
         var bills = await loan.getBillsByPid(0)
