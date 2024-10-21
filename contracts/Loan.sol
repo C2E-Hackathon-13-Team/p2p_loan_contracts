@@ -43,6 +43,7 @@ contract Loan{
     Project[] public projects;//所有筹资项目
     mapping(uint=>Contribution[]) public contribution;//出资信息
     mapping(uint=>Bill[]) public bills;//还款账单
+    mapping(uint=>uint[]) public bb;//测试
 
     mapping(address=>uint[]) public launchProjects;//发起过的项目
     mapping(address=>uint[]) public contributeProjects;//出资过的项目
@@ -52,62 +53,64 @@ contract Loan{
     //新增筹资项目
     function createProject(uint256 _amount,uint256 _rate,uint8 _term,uint256 _collectEndTime,uint8 _repayMethod)  external  {
         
-        // require(_amount > 0,"amount must bigger than 0");
-        // require(_term > 0,"term must bigger than 0");
-        // require(_collectEndTime > block.timestamp + 24 hours,"collect end time must be greater than 24 hours");
-        // require(_repayMethod == 1,"repay method must be 1");
+        require(_amount > 0,"amount must bigger than 0");
+        require(_term > 0,"term must bigger than 0");
+        require(_collectEndTime > block.timestamp + 24 hours,"collect end time must be greater than 24 hours");
+        require(_repayMethod == 1,"repay method must be 1");
 
 
         
 
-        // projects.push(Project(
-        //     _amount,
-        //     _rate,
-        //     _term,
-        //     _collectEndTime,
-        //     _repayMethod,
-        //     1,
-        //     msg.sender,
-        //     0
-        // ));
+        projects.push(Project(
+            _amount,
+            _rate,
+            _term,
+            _collectEndTime,
+            _repayMethod,
+            1,
+            msg.sender,
+            0
+        ));
 
-        // uint pid =projects.length-1;
+        uint pid =projects.length-1;
 
 
 
-        // // 转换为定点数
-        // int128 amount128 = ABDKMath64x64.fromUInt(_amount);
-        // // int128 term128 = ABDKMath64x64.fromUInt(_term);
-        // int128 mr128 = ABDKMath64x64.div(ABDKMath64x64.fromUInt(_rate),ABDKMath64x64.fromInt(12));
+        // 转换为定点数
+        int128 amount128 = ABDKMath64x64.fromUInt(_amount);
+        // int128 term128 = ABDKMath64x64.fromUInt(_term);
+        int128 yearRate128 = ABDKMath64x64.div(ABDKMath64x64.fromUInt(_rate),ABDKMath64x64.fromUInt(1000000));
+        int128 mr128 = ABDKMath64x64.div(yearRate128,ABDKMath64x64.fromInt(12));
 
-        // /**
-        //  * 每月还款额=[贷款本金×月利率×（1+月利率）^还款月数]÷[（1+月利率）^还款月数－1]
-        //  */
-        // //（1+月利率）
-        // int128 num1 = ABDKMath64x64.add(ABDKMath64x64.fromInt(1),mr128);
-        // //（1+月利率）^还款月数
-        // int128 num2 = ABDKMath64x64.pow(num1,_term);
-        // //贷款本金×月利率
-        // int128 num3 = ABDKMath64x64.mul(amount128,mr128);
-        // //[贷款本金×月利率×（1+月利率）^还款月数]
-        // int128 num4 = ABDKMath64x64.mul(num3,num2);
-        // //[（1+月利率）^还款月数－1]
-        // int128 num5 = ABDKMath64x64.sub(num2,ABDKMath64x64.fromInt(1));
-        // //每月还款额
-        // int128 num6 = ABDKMath64x64.div(num4,num5);
+        /**
+         * 每月还款额=[贷款本金×月利率×（1+月利率）^还款月数]÷[（1+月利率）^还款月数－1]
+         */
+        //（1+月利率）
+        int128 num1 = ABDKMath64x64.add(ABDKMath64x64.fromInt(1),mr128);
+        //（1+月利率）^还款月数
+        int128 num2 = ABDKMath64x64.pow(num1,_term);
+        //贷款本金×月利率
+        int128 num3 = ABDKMath64x64.mul(amount128,mr128);
+        //[贷款本金×月利率×（1+月利率）^还款月数]
+        int128 num4 = ABDKMath64x64.mul(num3,num2);
+        //[（1+月利率）^还款月数－1]
+        int128 num5 = ABDKMath64x64.sub(num2,ABDKMath64x64.fromInt(1));
+        //每月还款额
+        int128 num6 = ABDKMath64x64.div(num4,num5);
         
-        // uint payMonth = ABDKMath64x64.toUInt(num6);
+        uint payMonth = ABDKMath64x64.toUInt(num6);
         // console.log(payMonth);
 
-        // for(uint m=1;m<=_term;m++){
-        //     bills[pid].push(Bill(payMonth,0,0,0,0));
-        // }
+        Bill[] storage bs = bills[pid];
+        for(uint m=1 ; m <= _term ; m++){
+            bs.push(Bill(payMonth,0,0,0,0));
+        }
         
         
          
 
 
-        // launchProjects[msg.sender].push(pid);
+        launchProjects[msg.sender].push(pid);
 
         
     }
