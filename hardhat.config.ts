@@ -2,7 +2,21 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.27",
+  solidity: {
+    version: "0.8.27",
+    settings: {
+      viaIR: true,
+      optimizer: {
+        enabled: true,
+        runs: 200, // adjust based on your needs
+        details: {
+          yulDetails: {
+            optimizerSteps: "u", // recommended for better performance
+          },
+        },
+      },
+    },
+  },
   networks:{
     local: {
       url: 'http://localhost:8545',

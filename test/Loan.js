@@ -11,12 +11,16 @@ describe("贷款合约",async function(){
     });
 
     it("新增筹资项目", async function () {
-        var p = await loan.createProject(
-            500000000000000000,40000,10,1732193392,1
+        const largeNumber = BigInt(500000000000000000);
+        await loan.createProject(
+            largeNumber ,40000,20,1732193392,1
         );
-        console.log(p);
-        var bs = await loan.bills(0,0)
-        console.log(bs);
+
+        var bills = await loan.getBillsByPid(0)
+        bills.forEach((bill)=>{
+            console.log(bill[1],Number(bill[2]/10000000000n),Number(bill[3]/10000000000n));
+        })
+        
         
     });
 })

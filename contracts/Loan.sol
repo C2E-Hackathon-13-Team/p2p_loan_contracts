@@ -3,13 +3,14 @@ pragma solidity 0.8.27;
 import "hardhat/console.sol";
 
 import "./utils/ABDKMath/ABDKMath64x64.sol";
+import "./utils/BokkyPooBahsDateTime/BokkyPooBahsDateTimeLibrary.sol";
 
 contract Loan{
 
     //还款账单
     struct Bill{
         uint256 projectId;//项目ID
-        uint256 startTime;//生效时间
+        uint256 repayTime;//还款日期
         uint256 principal;//本金
         uint256 interest;//利息
         uint256 repaid;//已偿还金额
@@ -79,8 +80,8 @@ contract Loan{
         // 转换为定点数
         int128 amount128 = ABDKMath64x64.fromUInt(_amount);
         // int128 term128 = ABDKMath64x64.fromUInt(_term);
-        int128 yearRate128 = ABDKMath64x64.div(ABDKMath64x64.fromUInt(_rate),ABDKMath64x64.fromUInt(1000000));
-        int128 mr128 = ABDKMath64x64.div(yearRate128,ABDKMath64x64.fromInt(12));
+        int128 yearRate128 = ABDKMath64x64.div(ABDKMath64x64.fromUInt(_rate),ABDKMath64x64.fromUInt(1000000));//月利率
+        int128 mr128 = ABDKMath64x64.div(yearRate128,ABDKMath64x64.fromInt(12));//月利率
 
         /**
          * 每月还款额=[贷款本金×月利率×（1+月利率）^还款月数]÷[（1+月利率）^还款月数－1]
@@ -98,16 +99,27 @@ contract Loan{
         //每月还款额
         int128 num6 = ABDKMath64x64.div(num4,num5);
         
-        uint payMonth = ABDKMath64x64.toUInt(num6);
-        // console.log(payMonth);
 
         Bill[] storage bs = bills[pid];
+        int128 remaining = amount128;//剩余本金
         for(uint m=1 ; m <= _term ; m++){
-            bs.push(Bill(payMonth,0,0,0,0));
+            //当期应还利息
+            int128 num7 = ABDKMath64x64.mul(remaining,mr128);
+            //当期应还本金
+            int128 num8 = ABDKMath64x64.sub(num6,num7);
+            //还款日期
+            uint repayTime = BokkyPooBahsDateTimeLibrary.addMonths(_collectEndTime,m);
+
+            bs.push(Bill(
+                pid,
+                repayTime,
+                ABDKMath64x64.toUInt(num8),//本金
+                ABDKMath64x64.toUInt(num7),//利息
+                0
+            ));
+
+            remaining = ABDKMath64x64.sub(remaining , num6);
         }
-        
-        
-         
 
 
         launchProjects[msg.sender].push(pid);
@@ -154,6 +166,12 @@ contract Loan{
 
     }
 
+    //获取项目所有还款账单
+    function getBillsByPid(uint pid) external view returns(Bill[] memory){
+        return bills[pid];
+    }
+
+
     //获取当前应还金额
     function getAmountNeedRepayNow(uint pid) external view returns(uint256){
         Project storage p = projects[pid];
@@ -161,20 +179,7 @@ contract Loan{
 
     }
 
-    using ABDKMath64x64 for bytes16;
-
-    function test() external view returns(int128){
-
-        // 将10和3转换为定点数
-        int128 numerator = ABDKMath64x64.fromInt(10);
-        int128 denominator = ABDKMath64x64.fromInt(3);
-        
-        // 进行除法运算
-        int128 result = ABDKMath64x64.div(numerator, denominator);
-
-        return ABDKMath64x64.toInt(result);
-
-    }
+    
 
     
 
