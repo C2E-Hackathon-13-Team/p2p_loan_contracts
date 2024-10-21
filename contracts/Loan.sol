@@ -74,9 +74,6 @@ contract Loan{
         uint pid =projects.length-1;
 
 
-        
-        
-        
 
         // 转换为定点数
         int128 amount128 = ABDKMath64x64.fromUInt(_amount);

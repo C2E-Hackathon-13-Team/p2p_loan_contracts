@@ -17,7 +17,7 @@ describe("贷款合约",async function(){
             100,40000,10,1729568530000,1
         );
         console.log(p);
-        var bs = await loan.test()
+        var bs = await loan.bills(0,0)
         console.log(bs);
         
     });
