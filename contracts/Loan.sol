@@ -2,6 +2,8 @@
 pragma solidity 0.8.27;
 import "hardhat/console.sol";
 
+import "./utils/ABDKMath/ABDKMath64x64.sol";
+
 contract Loan{
 
     //还款账单
@@ -73,18 +75,42 @@ contract Loan{
 
 
         
-        uint mr = _rate/12;
+        
+        
+
+        // 转换为定点数
+        int128 amount128 = ABDKMath64x64.fromUInt(_amount);
+        // int128 term128 = ABDKMath64x64.fromUInt(_term);
+        int128 mr128 = ABDKMath64x64.div(ABDKMath64x64.fromUInt(_rate),ABDKMath64x64.fromInt(12));
+
+        /**
+         * 每月还款额=[贷款本金×月利率×（1+月利率）^还款月数]÷[（1+月利率）^还款月数－1]
+         */
+        //（1+月利率）
+        int128 num1 = ABDKMath64x64.add(ABDKMath64x64.fromInt(1),mr128);
+        //（1+月利率）^还款月数
+        int128 num2 = ABDKMath64x64.pow(num1,_term);
+        //贷款本金×月利率
+        int128 num3 = ABDKMath64x64.mul(amount128,mr128);
+        //[贷款本金×月利率×（1+月利率）^还款月数]
+        int128 num4 = ABDKMath64x64.mul(num3,num2);
+        //[（1+月利率）^还款月数－1]
+        int128 num5 = ABDKMath64x64.sub(num2,ABDKMath64x64.fromInt(1));
+        //每月还款额
+        int128 num6 = ABDKMath64x64.div(num4,num5);
+        
+        uint payMonth = ABDKMath64x64.toUInt(num6);
+
+
         for(uint m=1;m<=_term;m++){
-            uint256 a = (    (_amount*mr*(1+mr)**m) / ((1+mr)**m-1)   );
-            bills[pid].push(Bill(a,0,0,0,0));
+            bills[pid].push(Bill(payMonth,0,0,0,0));
         }
+        
+        
          
 
 
         launchProjects[msg.sender].push(pid);
-
-        
-
 
         
     }
@@ -132,6 +158,21 @@ contract Loan{
     function getAmountNeedRepayNow(uint pid) external view returns(uint256){
         Project storage p = projects[pid];
 
+
+    }
+
+    using ABDKMath64x64 for bytes16;
+
+    function test() external view returns(int128){
+
+        // 将10和3转换为定点数
+        int128 numerator = ABDKMath64x64.fromInt(10);
+        int128 denominator = ABDKMath64x64.fromInt(3);
+        
+        // 进行除法运算
+        int128 result = ABDKMath64x64.div(numerator, denominator);
+
+        return ABDKMath64x64.toInt(result);
 
     }
 
