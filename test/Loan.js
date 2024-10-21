@@ -5,7 +5,7 @@ describe("贷款合约",async function(){
 
     let loan;
 
-    beforeEach(async function () {
+    before(async function () {
         const Loan = await ethers.getContractFactory("Loan");
         loan = await Loan.deploy();
     });
