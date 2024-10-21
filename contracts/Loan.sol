@@ -4,11 +4,21 @@ import "hardhat/console.sol";
 
 contract Loan{
 
+    //还款账单
+    struct Bill{
+        uint256 projectId;//项目ID
+        uint256 startTime;//生效时间
+        uint256 principal;//本金
+        uint256 interest;//利息
+        uint256 repaid;//已偿还金额
+        
+    }
+
     //筹资项目
     struct Project{
         uint256 amount;//金额，以Wei为单位
         uint256 rate;//年利率*1000000,例如如果年利率为5.6789%，则该字段的值 = 0.056789*1000000 = 56789
-        uint8 term;//贷款期限，年 
+        uint8 term;//贷款期限，月 
         uint256 collectEndTime;//筹资结束时间
         uint8 repayMethod;//还款方式，1-等额本息、2-待定
         uint8 status;//项目状态：1-筹资期、2-还款期、3-已撤销
@@ -16,7 +26,7 @@ contract Loan{
         uint256 collected;//已筹集到资金
     }
 
-    //还款账单
+    
 
     //出资信息
     struct Contribution{
@@ -30,6 +40,7 @@ contract Loan{
 
     Project[] public projects;//所有筹资项目
     mapping(uint=>Contribution[]) public contribution;//出资信息
+    mapping(uint=>Bill[]) public bills;//还款账单
 
     mapping(address=>uint[]) public launchProjects;//发起过的项目
     mapping(address=>uint[]) public contributeProjects;//出资过的项目
@@ -44,7 +55,10 @@ contract Loan{
         require(_collectEndTime > block.timestamp + 24 hours,"collect end time must be greater than 24 hours");
         require(_repayMethod == 1,"repay method must be 1");
 
-        Project memory p = Project(
+
+        
+
+        projects.push(Project(
             _amount,
             _rate,
             _term,
@@ -53,9 +67,25 @@ contract Loan{
             1,
             msg.sender,
             0
-        );
-        projects.push(p);
-        launchProjects[msg.sender].push(projects.length-1);
+        ));
+
+        uint pid =projects.length-1;
+
+
+        
+        uint mr = _rate/12;
+        for(uint m=1;m<=_term;m++){
+            uint256 a = (    (_amount*mr*(1+mr)**m) / ((1+mr)**m-1)   );
+            bills[pid].push(Bill(a,0,0,0,0));
+        }
+         
+
+
+        launchProjects[msg.sender].push(pid);
+
+        
+
+
         
     }
 
