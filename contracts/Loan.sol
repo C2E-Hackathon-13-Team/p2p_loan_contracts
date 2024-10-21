@@ -22,7 +22,7 @@ contract Loan{
     struct Project{
         uint256 amount;//金额，以Wei为单位
         uint256 rate;//年利率*1000000,例如如果年利率为5.6789%，则该字段的值 = 0.056789*1000000 = 56789
-        uint8 term;//贷款期限，月 
+        uint256 term;//贷款期限，月 
         uint256 collectEndTime;//筹资结束时间
         uint8 repayMethod;//还款方式，1-等额本息、2-待定
         uint8 status;//项目状态：1-筹资期、2-还款期、3-已撤销
@@ -57,7 +57,7 @@ contract Loan{
     * 每月还款额=[贷款本金×月利率×（1+月利率）^还款月数]÷[（1+月利率）^还款月数－1]
     * 返回定点数
     */
-    function getRepayMonthly(int128 amount128,int128 mr128,uint8 _term) private pure returns(int128){
+    function getRepayMonthly(int128 amount128,int128 mr128,uint256 _term) private pure returns(int128){
 
         //（1+月利率）
         int128 num1 = ABDKMath64x64.add(ABDKMath64x64.fromInt(1),mr128);
@@ -78,7 +78,7 @@ contract Loan{
 
 
     //新增筹资项目
-    function createProject(uint256 _amount,uint256 _rate,uint8 _term,uint256 _collectEndTime,uint8 _repayMethod)  external  {
+    function createProject(uint256 _amount,uint256 _rate,uint256 _term,uint256 _collectEndTime,uint8 _repayMethod)  external  {
         
         require(_amount > 0,"amount must bigger than 0");
         require(_term > 0,"term must bigger than 0");
@@ -109,24 +109,33 @@ contract Loan{
         
 
         Bill[] storage bs = bills[pid];
-        int128 remaining = amount128;//剩余本金
-        for(uint m=1 ; m <= _term ; m++){
+        int128 remaining = amount128;//剩余本息
+        for(uint m=1 ; m <=_term ; m++){
+            
+
             //当期应还利息
             int128 num7 = ABDKMath64x64.mul(remaining,mr128);
+            num7 = ABDKMath64x64.toInt(num7) < 0 ? ABDKMath64x64.fromInt(0) : num7;
+
             //当期应还本金
             int128 num8 = ABDKMath64x64.sub(num6,num7);
             //还款日期
             uint repayTime = BokkyPooBahsDateTimeLibrary.addMonths(_collectEndTime,m);
 
+            
+
+            uint principal = ABDKMath64x64.toUInt(num8);
+            uint interest = ABDKMath64x64.toUInt(num7);
             bs.push(Bill(
                 pid,
                 repayTime,
-                ABDKMath64x64.toUInt(num8),//本金
-                ABDKMath64x64.toUInt(num7),//利息
+                principal,
+                interest,
                 0
             ));
 
-            remaining = ABDKMath64x64.sub(remaining , num6);
+            remaining = ABDKMath64x64.sub(remaining , num8);
+            
         }
 
 
@@ -176,9 +185,9 @@ contract Loan{
 
     //获取项目所有还款账单
     function getBillsByPid(uint pid) external view returns(Bill[] memory){
-        for(uint i=0;i<bills[pid].length;i++){
-            console.log(bills[pid][i].repayTime,bills[pid][i].principal,bills[pid][i].interest);
-        }
+        // for(uint i=0;i<bills[pid].length;i++){
+        //     console.log(bills[pid][i].repayTime,bills[pid][i].principal,bills[pid][i].interest);
+        // }
         return bills[pid];
     }
 
