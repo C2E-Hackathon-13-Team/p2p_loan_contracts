@@ -14,7 +14,7 @@ describe("贷款合约",async function(){
         //500000000000000000
         const largeNumber = BigInt(500000000000000000);
         await loan.createProject(
-            largeNumber ,60000,240,1732193392,1,{
+            largeNumber ,60000,300,1732193392,1,{
                 gasLimit: 30000000
             }
         );
