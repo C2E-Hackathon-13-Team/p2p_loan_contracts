@@ -5,8 +5,13 @@ import "hardhat/console.sol";
 import "./utils/ABDKMath/ABDKMath64x64.sol";
 import "./utils/BokkyPooBahsDateTime/BokkyPooBahsDateTimeLibrary.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Loan{
+contract Loan is Ownable{
+
+    //owner会抽取手续费，功能后期在加
+    constructor(address initialOwner) Ownable(initialOwner) {}
+    
 
     //还款账单
     struct Bill{
@@ -105,13 +110,14 @@ contract Loan{
     }
 
 
-    //确认项目。进入还款期,并生成账单
+    //确认项目。进入还款期,发放贷款,并生成账单
     function confirm(uint pid) external {
 
 
         Project storage pro = projects[pid];
         require( pro.status == 1 && block.timestamp > pro.collectEndTime , "Confirmation operations can only be performed when the project is in a pending confirmation state");
         require( pro.launcher == msg.sender , "Only the initiator can confirm the project");
+        require( pro.collected > 0 , "Only projects with raised funds greater than 0 can be confirmed");
         pro.status = 2;
 
 
@@ -158,7 +164,7 @@ contract Loan{
             //还款日期
             uint repayTime = BokkyPooBahsDateTimeLibrary.addMonths(pro.collectEndTime,m);
 
-
+            //存入账单
             bs.push(Bill(
                 pid,
                 repayTime,
@@ -170,6 +176,10 @@ contract Loan{
 
 
         }
+
+
+        (bool success, ) = msg.sender.call{value:pro.collected}("");
+        require(success,"Failure to issue loan");
         
     }
 

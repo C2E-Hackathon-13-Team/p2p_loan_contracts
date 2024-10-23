@@ -1,5 +1,9 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import * as dotenv from "dotenv";
+
+dotenv.config();
+const { OWNER_PRIVATE_KEY } = process.env;
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -21,7 +25,12 @@ const config: HardhatUserConfig = {
     local: {
       url: 'http://localhost:8545',
       chainId:31337
-    }
+    },
+    sepolia: {
+      url: 'https://rpc.sepolia.org',
+      chainId: 11155111,
+      accounts: [`0x${OWNER_PRIVATE_KEY}`]
+  },
   }
 };
 
