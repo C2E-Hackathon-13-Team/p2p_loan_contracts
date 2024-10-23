@@ -32,13 +32,12 @@ contract Loan{
         uint256 currentBill;//从第几个账单开始还款
     }
 
-    
-
     //出资信息
     struct Contribution{
         address investor;//出资人
         uint amount;//出资金额
-        uint time;
+        uint time;//出资时间
+        uint repaid;//已偿还
     }
 
     mapping(address=>bool) public users;//已注册用户
@@ -51,14 +50,9 @@ contract Loan{
     mapping(address=>uint[]) public launchProjects;//发起过的项目
     mapping(address=>uint[]) public contributeProjects;//出资过的项目
 
+    receive() external payable {}
 
-
-    
-
-
-
-
-    //新增筹资项目
+    //新增项目
     function createProject(uint256 _amount,uint256 _rate,uint256 _term,uint256 _collectEndTime,uint8 _repayMethod)  external  {
         
         require(_amount > 0,"amount must bigger than 0");
@@ -82,7 +76,36 @@ contract Loan{
         
     }
 
-    //确认筹资，进入还款期并生成账单
+    //出资
+    function contribute(uint pid) external payable {
+        Project storage p = projects[pid];
+        require( p.status == 1 && block.timestamp < p.collectEndTime, "Only projects in the funding phase can receive funding");
+        require( p.launcher != msg.sender , "Project launcher are not allowed to contribute capital");
+        require( msg.value > 0 ,"Amount must bigger than 0");
+        require( msg.value <= p.amount - p.collected ,"The amount of funds contributed exceeds the project requirements");
+
+        contribution[pid].push(Contribution(msg.sender,msg.value,block.timestamp,0));
+        p.collected += msg.value;
+        contributeProjects[msg.sender].push(pid);
+    }
+
+    //撤销项目
+    function revocateProject(uint pid) external{
+        Project storage p = projects[pid];
+        require( p.launcher == msg.sender , "Only the project initiator can cancel the project");
+        require( p.status == 1 , "Only projects in the funding period and pending confirmation stage can be cancelled");
+
+        Contribution[] storage cons = contribution[pid];
+        for (uint256 i = 0; i < cons.length; i++) {
+             (bool success, ) = cons[i].investor.call{value:cons[i].amount}("");
+             require(success,string.concat("transfer to ",string(abi.encodePacked(cons[i].investor))," fail !"));
+        }
+
+        p.status = 4; 
+    }
+
+
+    //确认项目。进入还款期,并生成账单
     function confirm(uint pid) external {
 
 
@@ -150,8 +173,6 @@ contract Loan{
         
     }
 
-
-
     /**
     * 每月还款额=[贷款本金×月利率×（1+月利率）^还款月数]÷[（1+月利率）^还款月数－1]
     * 返回定点数
@@ -174,37 +195,6 @@ contract Loan{
         return num6;
     }
 
-
-    //撤销项目
-    function revocateProject(uint pid) external{
-        Project storage p = projects[pid];
-        require( p.launcher == msg.sender , "Only the project initiator can cancel the project");
-        require( p.status == 1 , "Only projects in the funding period and pending confirmation stage can be cancelled");
-
-        Contribution[] storage cons = contribution[pid];
-        for (uint256 i = 0; i < cons.length; i++) {
-             (bool success, ) = cons[i].investor.call{value:cons[i].amount}("");
-             require(success,string.concat("transfer to ",string(abi.encodePacked(cons[i].investor))," fail !"));
-        }
-
-        p.status = 4; 
-    }
-
-    receive() external payable {}
-
-    //出资
-    function contribute(uint pid) external payable {
-        Project storage p = projects[pid];
-        require( p.status == 1 && block.timestamp < p.collectEndTime, "Only projects in the funding phase can receive funding");
-        require( p.launcher != msg.sender , "Project launcher are not allowed to contribute capital");
-        require( msg.value > 0 ,"Amount must bigger than 0");
-        require( msg.value <= p.amount - p.collected ,"The amount of funds contributed exceeds the project requirements");
-
-        contribution[pid].push(Contribution(msg.sender,msg.value,block.timestamp));
-        p.collected += msg.value;
-        contributeProjects[msg.sender].push(pid);
-    }
-
     //还款
     function repay(uint pid) external payable{
         Project storage p = projects[pid];
@@ -212,6 +202,7 @@ contract Loan{
         require( p.launcher == msg.sender , "Only the project initiator can repay the loan");
         require( msg.value > 0 , "Not carrying Ethereum");
         
+        //更新账单和项目状态
         uint msgVal = msg.value;
         uint _currentBill = p.currentBill;
         Bill[] storage bs = bills[pid];
@@ -230,13 +221,26 @@ contract Loan{
                     _currentBill++;
                     bs[i].status = 2;
                 }
-                
+            }
+        }
+        p.currentBill = _currentBill;
+        if(_currentBill == bs.length) p.status = 3;
+
+
+        //转账至出资人
+        uint totalRepay = msg.value - msgVal;
+        if(totalRepay > 0){
+            Contribution[] storage cons = contribution[pid];
+            for( uint i = 0 ; i < cons.length ; i++ ){
+                uint money = totalRepay * ( cons[i].amount /  p.collected ) ;
+                (bool success, ) = cons[i].investor.call{value:money}("");
+                require(success,"Failed to repay funds to investors");
             }
         }
 
-        p.currentBill = _currentBill;
 
-        if(msgVal!=0){//退还多余金额
+        //退还多余金额
+        if(msgVal!=0){
             (bool success, ) = msg.sender.call{value:msgVal}("");
             require(success,"Refund of excess amount failed");
         }
@@ -268,11 +272,5 @@ contract Loan{
     }
 
     
-
-    
-
-
-
-
 
 }
