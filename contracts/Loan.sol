@@ -26,9 +26,11 @@ contract Loan is Ownable{
 
     //筹资项目
     struct Project{
+        uint pid;//项目ID
         uint256 amount;//金额，以Wei为单位
         uint256 rate;//年利率*1000000,例如如果年利率为5.6789%，则该字段的值 = 0.056789*1000000 = 56789
         uint256 term;//贷款期限，月 
+        uint256 createTime;//创建时间
         uint256 collectEndTime;//筹资结束时间
         uint8 repayMethod;//还款方式，1-等额本息、2-待定
         uint8 status;//项目状态：1-筹资期（或待确认）、2-还款期、3-已结束、4-已撤销
@@ -65,10 +67,13 @@ contract Loan is Ownable{
         require(_collectEndTime > block.timestamp + 24 hours,"collect end time must be greater than 24 hours");
         require(_repayMethod == 1,"repay method must be 1");
 
+        uint pid =projects.length;
         projects.push(Project(
+            pid,
             _amount,
             _rate,
             _term,
+            block.timestamp ,
             _collectEndTime,
             _repayMethod,
             1,
@@ -76,7 +81,7 @@ contract Loan is Ownable{
             0,
             0
         ));
-        uint pid =projects.length-1;
+        
         launchProjects[msg.sender].push(pid);
         
     }
@@ -281,6 +286,24 @@ contract Loan is Ownable{
 
     }
 
+
+    function getProjectsByIds( uint[] memory pids ) private view returns(Project[] memory){
+        Project[] memory result = new Project[](pids.length);
+        for(uint i=0;i<pids.length;i++){
+            result[i] = projects[pids[i]];
+        }
+        return result;
+    }
+
+    //获取用户发起过的项目
+    function getLaunchProjects(address addr) external view returns(Project[] memory){
+        return getProjectsByIds(launchProjects[addr]);
+    }
+
+    //获取用户资过的项目
+    function getContributeProjects(address addr) external view returns(Project[] memory){
+        return getProjectsByIds(contributeProjects[addr]);
+    }
     
 
 }
