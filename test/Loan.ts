@@ -39,10 +39,10 @@ describe("Loan", function () {
     });
 
 
-    it("新增项目", async function () {
+    it.only("新增项目", async function () {
         let current = Math.floor(Date.now() / 1000);
         current += 25 * 60 *60;
-        const r = await loan.connect(lancher).createProject( 8000 , 0.6*1000000 , 12 , current , 1 )
+        const r = await loan.connect(lancher).createProject( 8000 , 0.6*1000000 , 5 , current , 1 )
         console.log(r)
     });
 
@@ -51,6 +51,11 @@ describe("Loan", function () {
         console.log(r1)
         const r2 = await loan.connect(investor2).contribute(0,{ value: 5000 })
         console.log(r2)
+    });
+
+    it.only("确认", async function () {
+        const r1 = await loan.connect(lancher).confirm(0)
+        console.log(r1)
     });
 
 

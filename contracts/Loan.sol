@@ -118,14 +118,12 @@ contract Loan is Ownable{
     //确认项目。进入还款期,发放贷款,并生成账单
     function confirm(uint pid) external {
 
-
         Project storage pro = projects[pid];
         require( pro.launcher == msg.sender , "Only the initiator can confirm the project");
         require( pro.collected > 0 , "Only projects with raised funds greater than 0 can be confirmed");
         require( pro.status == 1  , "Confirmation operations can only be performed when the project is in a pending confirmation state");
         require( block.timestamp > pro.collectEndTime || pro.collected >= pro.amount ,"Only projects that reach the deadline or finish raising funds early will be recognized.");
         pro.status = 2;
-
 
         // 转换为定点数
         int128 amount128 = ABDKMath64x64.fromUInt(pro.collected);
@@ -141,6 +139,8 @@ contract Loan is Ownable{
         }
 
         
+
+        
         Bill[] storage bs = bills[pid];
         int128 remaining = amount128;//剩余本金
         for(uint m=1 ; m <=pro.term ; m++){
@@ -148,6 +148,7 @@ contract Loan is Ownable{
 
             //当期应还利息
             int128 num7 = ABDKMath64x64.mul(remaining,mr128);
+            console.log("num7=");
 
             //当期应还本金
             int128 num8 = ABDKMath64x64.sub(num6,num7);
@@ -169,10 +170,15 @@ contract Loan is Ownable{
                 }
 
             }
+            console.log("num8=");
+            
+
+            
 
 
             //还款日期
             uint repayTime = BokkyPooBahsDateTimeLibrary.addMonths(pro.collectEndTime,m);
+            console.log("repayTime=",repayTime);
 
             //存入账单
             bs.push(Bill(
@@ -184,10 +190,12 @@ contract Loan is Ownable{
                 1
             ));
 
+            console.log("----------------------");
+
 
         }
 
-
+        console.log("4444444444444444444444");
         (bool success, ) = msg.sender.call{value:pro.collected}("");
         require(success,"Failure to issue loan");
         
