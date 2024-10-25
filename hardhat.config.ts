@@ -4,7 +4,7 @@ import * as dotenv from "dotenv";
 
 dotenv.config({ path: `./.env.${process.env.NODE_ENV}` });
 
-const { OWNER_PRIVATE_KEY,LAUNCHER_PRIVATE_KEY,INVESTOR_PRIVATE_KEY } = process.env;
+const { OWNER_PRIVATE_KEY,LAUNCHER_PRIVATE_KEY,INVESTOR1_PRIVATE_KEY,INVESTOR2_PRIVATE_KEY } = process.env;
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -26,13 +26,13 @@ const config: HardhatUserConfig = {
     local: {
       url: 'http://localhost:8545',
       chainId:31337,
-      accounts: [`${OWNER_PRIVATE_KEY}`,`${LAUNCHER_PRIVATE_KEY}`,`${INVESTOR_PRIVATE_KEY}`]
+      accounts: [`${OWNER_PRIVATE_KEY}`,`${LAUNCHER_PRIVATE_KEY}`,`${INVESTOR1_PRIVATE_KEY}`,`${INVESTOR2_PRIVATE_KEY}`]
     },
     sepolia: {
       url: 'https://rpc.sepolia.org',
       chainId: 11155111,
       accounts: [`${OWNER_PRIVATE_KEY}`]
-  },
+    },
   }
 };
 
