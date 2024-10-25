@@ -10,14 +10,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Loan is Ownable{
 
     //owner会抽取手续费，功能后期在加。
-    constructor(address initialOwner) Ownable(initialOwner) {}
+    constructor() Ownable(msg.sender) {}
     
 
     //还款账单
     struct Bill{
         uint256 projectId;//项目ID
         uint256 repayTime;//账单生效日期
-        uint256 principal;//需要偿还的本金
+        uint256 capital;//需要偿还的本金
         uint256 interest;//需要偿还的利息
         uint256 repaid;//已偿还金额
         uint256 status;//偿还状态：1-未清偿 2-已清偿
@@ -123,79 +123,71 @@ contract Loan is Ownable{
         require( pro.collected > 0 , "Only projects with raised funds greater than 0 can be confirmed");
         require( pro.status == 1  , "Confirmation operations can only be performed when the project is in a pending confirmation state");
         require( block.timestamp > pro.collectEndTime || pro.collected >= pro.amount ,"Only projects that reach the deadline or finish raising funds early will be recognized.");
+        
         pro.status = 2;
 
-        // 转换为定点数
-        int128 amount128 = ABDKMath64x64.fromUInt(pro.collected);
-        int128 yearRate128 = ABDKMath64x64.div(ABDKMath64x64.fromUInt(pro.rate),ABDKMath64x64.fromUInt(1000000));//月利率
-        int128 mr128 = ABDKMath64x64.div(yearRate128,ABDKMath64x64.fromInt(12));//月利率
-
-        //每月还款额
-        int128 num6 = getRepayMonthly(amount128,mr128,pro.term);
-        
         //主动提前进入还款期
         if(block.timestamp < pro.collectEndTime){
             pro.collectEndTime = block.timestamp;
         }
 
         
+        //月利率*1000000
+        uint rateMonthly = ABDKMath64x64.toUInt(
+            ABDKMath64x64.div(ABDKMath64x64.fromUInt(pro.rate),ABDKMath64x64.fromInt(12))
+        );
 
+        //每月还款额
+        uint repayMonthly = getRepayMonthly(pro.collected,pro.rate,pro.term);
         
         Bill[] storage bs = bills[pid];
-        int128 remaining = amount128;//剩余本金
+        uint remaining = pro.collected;//剩余本金
         for(uint m=1 ; m <=pro.term ; m++){
             
 
             //当期应还利息
-            int128 num7 = ABDKMath64x64.mul(remaining,mr128);
-            console.log("num7=");
+            uint interest = remaining * rateMonthly / 1000000 ;
 
             //当期应还本金
-            int128 num8 = ABDKMath64x64.sub(num6,num7);
+            uint capital = repayMonthly - interest ;
 
 
             // 【考虑精度影响】如果这是最后一期，还有本金没还不完，当期应还本金就应该等于剩余本金
-            if(m == pro.term && ABDKMath64x64.toInt(remaining) > ABDKMath64x64.toInt(num8) ){//之前还少了，最后补足一下
+            if(m == pro.term && remaining > capital ){//之前还少了，最后补足一下
 
-                num8 = remaining;
-                remaining = ABDKMath64x64.fromInt(0);
+                capital = remaining;
+                remaining = 0;
 
-            }else{//之前还多了，这次少还一点
+            }else if(remaining < capital){
 
                 //【考虑精度影响】如果应还本金超过了剩余本金，说明这一次就要还完所有钱了，要把应还本金设为剩余本金，然后下一轮的剩余本金置零，而不是算出负数来
-                remaining = ABDKMath64x64.sub(remaining , num8);
-                if(ABDKMath64x64.toInt(remaining) < 0){
-                    num8 = remaining;
-                    remaining = ABDKMath64x64.fromInt(0);
-                }
+                capital = remaining;
+                remaining = 0;
+
+            }else{
+
+                remaining = remaining - capital;
 
             }
-            console.log("num8=");
             
-
-            
-
 
             //还款日期
-            uint repayTime = BokkyPooBahsDateTimeLibrary.addMonths(pro.collectEndTime,m);
-            console.log("repayTime=",repayTime);
+            // uint repayTime = BokkyPooBahsDateTimeLibrary.addMonths(pro.collectEndTime,m);
+            uint repayTime = pro.collectEndTime + ( m * 10 );//为了方便演示，这里设置每10秒就应该还一次款
 
             //存入账单
             bs.push(Bill(
                 pid,
                 repayTime,
-                ABDKMath64x64.toUInt(num8),
-                ABDKMath64x64.toUInt(num7),
+                capital,
+                interest,
                 0,
                 1
             ));
 
-            console.log("----------------------");
-
 
         }
-
-        console.log("4444444444444444444444");
+        
         (bool success, ) = msg.sender.call{value:pro.collected}("");
         require(success,"Failure to issue loan");
         
@@ -203,9 +195,13 @@ contract Loan is Ownable{
 
     /**
     * 每月还款额=[贷款本金×月利率×（1+月利率）^还款月数]÷[（1+月利率）^还款月数－1]
-    * 返回定点数
     */
-    function getRepayMonthly(int128 amount128,int128 mr128,uint256 _term) private pure returns(int128){
+    function getRepayMonthly(uint _collected,uint _rate,uint256 _term) private pure returns(uint){
+
+        // 转换为定点数
+        int128 amount128 = ABDKMath64x64.fromUInt(_collected);//总金额
+        int128 yearRate128 = ABDKMath64x64.div(ABDKMath64x64.fromUInt(_rate),ABDKMath64x64.fromUInt(1000000));//年利率
+        int128 mr128 = ABDKMath64x64.div(yearRate128,ABDKMath64x64.fromInt(12));//月利率
 
         //（1+月利率）
         int128 num1 = ABDKMath64x64.add(ABDKMath64x64.fromInt(1),mr128);
@@ -220,11 +216,13 @@ contract Loan is Ownable{
         //每月还款额
         int128 num6 = ABDKMath64x64.div(num4,num5);
 
-        return num6;
+        return ABDKMath64x64.toUInt(num6);
     }
 
+    event Repay(uint pid,address addr,uint totalRepay,uint status);
+
     //还款
-    function repay(uint pid) external payable{
+    function repay(uint pid) external payable {
         Project storage p = projects[pid];
         require( p.status == 2 , "Only projects that have entered the repayment period can be repaid.");
         require( p.launcher == msg.sender , "Only the project initiator can repay the loan");
@@ -238,7 +236,7 @@ contract Loan is Ownable{
             if(block.timestamp < bs[i].repayTime || msgVal == 0){
                 break;
             }else{
-                uint needRepy = bs[i].principal + bs[i].interest - bs[i].repaid;
+                uint needRepy = bs[i].capital + bs[i].interest - bs[i].repaid;
 
                 if(needRepy > msgVal){
                     bs[i].repaid += msgVal;
@@ -274,6 +272,8 @@ contract Loan is Ownable{
             require(success,"Refund of excess amount failed");
         }
 
+        if( totalRepay > 0 ) emit Repay(pid,msg.sender,totalRepay,p.status);
+
     }
 
     //获取项目所有还款账单
@@ -292,7 +292,7 @@ contract Loan is Ownable{
             if(current < bs[i].repayTime){
                 break;
             }else{
-                needRepy += bs[i].principal + bs[i].interest - bs[i].repaid;
+                needRepy += bs[i].capital + bs[i].interest - bs[i].repaid;
             }
         }
 
