@@ -2,7 +2,8 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import * as dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({ path: `./.env.${process.env.NODE_ENV}` });
+
 const { OWNER_PRIVATE_KEY } = process.env;
 
 const config: HardhatUserConfig = {
