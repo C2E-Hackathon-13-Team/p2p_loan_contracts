@@ -29,13 +29,13 @@ describe("Loan", function () {
     });
 
 
-    it("新增项目", async function () {
+    it.only("新增项目", async function () {
         let r = await loan.createProject( 8000 , 0.6*1000000 , 12 , 1729953652 , 1 )
         console.log(r)
         
     });
 
-    it.only("查看用户发起过的项目", async function () {
+    it("查看用户发起过的项目", async function () {
         const [signer] = await hre.ethers.getSigners();
         let r = await loan.getLaunchProjects(signer.address)
         console.log(r)
