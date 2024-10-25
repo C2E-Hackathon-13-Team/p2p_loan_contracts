@@ -37,26 +37,26 @@ describe("Loan", function () {
     });
 
 
-    it("新增项目", async function () {
+    it.only("新增项目", async function () {
         let current = Math.floor(Date.now() / 1000);
         current += 25 * 60 *60;
         const r = await loan.connect(lancher).createProject( 8000 , 0.6*1000000 , 12 , current , 1 )
         console.log(r)
     });
 
-    it.only("出资", async function () {
-        const r = await loan.connect(investor).contribute(1)
+    it("出资", async function () {
+        const r = await loan.connect(investor).contribute(1,{ value: 3000 })
         console.log(r)
     });
 
 
     it("查看用户发起过的项目", async function () {
-        const r = await loan.connect(lancher).getLaunchProjects(owner.address)
+        const r = await loan.connect(lancher).getLaunchProjects(lancher.address)
         console.log(r)
     });
 
     it('查看用户出资过的项目',async function(){
-        const r = await loan.connect(investor).getContributeProjects(owner.address)
+        const r = await loan.connect(investor).getContributeProjects(investor.address)
         console.log(r)
     })
 
