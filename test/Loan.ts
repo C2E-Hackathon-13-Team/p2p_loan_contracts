@@ -63,9 +63,13 @@ describe("Loan", function () {
     it.only('查看用户出资过的项目',async function(){
         const r1 = await loan.connect(investor1).getContributeProjects(investor1.address)
         console.log(r1)
-
         const r2 = await loan.connect(investor2).getContributeProjects(investor2.address)
         console.log(r2)
+    })
+
+    it.only('查询所有出资单',async function(){
+        const r1 = await loan.connect(owner).contribution(0,0)
+        console.log(r1)
     })
 
     

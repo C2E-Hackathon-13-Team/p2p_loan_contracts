@@ -39,23 +39,22 @@ contract Loan is Ownable{
         uint256 currentBill;//从第几个账单开始还款
     }
 
-    //出资信息
+    //出资单
     struct Contribution{
         address investor;//出资人
         uint amount;//出资金额
         uint time;//出资时间
-        uint repaid;//已偿还
     }
 
     mapping(address=>bool) public users;//已注册用户
     mapping(address=>uint256) public creditScore;//信用金
 
     Project[] public projects;//所有筹资项目
-    mapping(uint=>Contribution[]) public contribution;//出资信息
-    mapping(uint=>Bill[]) public bills;//还款账单
+    mapping(uint=>Contribution[]) public contribution;//项目ID -> 出资单
+    mapping(uint=>Bill[]) public bills;//项目ID -> 还款账单
 
-    mapping(address=>uint[]) public launchProjects;//发起过的项目
-    mapping(address=>uint[]) public contributeProjects;//出资过的项目
+    mapping(address=>uint[]) public launchProjects;//筹资人 -> 项目ID
+    mapping(address=>uint[]) public contributeProjects;//出资人 -> 项目ID
 
     receive() external payable {}
 
@@ -123,7 +122,7 @@ contract Loan is Ownable{
         require( pro.launcher == msg.sender , "Only the initiator can confirm the project");
         require( pro.collected > 0 , "Only projects with raised funds greater than 0 can be confirmed");
         require( pro.status == 1  , "Confirmation operations can only be performed when the project is in a pending confirmation state");
-        require( block.timestamp > pro.collectEndTime || pro.collected >= pro.amount ,"Only projects that reach the deadline or finish raising funds early will be recognized.")
+        require( block.timestamp > pro.collectEndTime || pro.collected >= pro.amount ,"Only projects that reach the deadline or finish raising funds early will be recognized.");
         pro.status = 2;
 
 
@@ -134,7 +133,11 @@ contract Loan is Ownable{
 
         //每月还款额
         int128 num6 = getRepayMonthly(amount128,mr128,pro.term);
-        // uint repayMonthly = ABDKMath64x64.toUInt(num6);
+        
+        //主动提前进入还款期
+        if(block.timestamp < pro.collectEndTime){
+            pro.collectEndTime = block.timestamp;
+        }
 
         
         Bill[] storage bs = bills[pid];
