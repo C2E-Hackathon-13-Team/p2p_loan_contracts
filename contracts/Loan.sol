@@ -300,7 +300,7 @@ contract Loan is Ownable{
         return getProjectsByIds(launchProjects[addr]);
     }
 
-    //获取用户资过的项目
+    //获取用户出资过的项目
     function getContributeProjects(address addr) external view returns(Project[] memory){
         return getProjectsByIds(contributeProjects[addr]);
     }
