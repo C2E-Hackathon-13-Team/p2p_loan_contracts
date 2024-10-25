@@ -44,6 +44,7 @@ contract Loan is Ownable{
         address investor;//出资人
         uint amount;//出资金额
         uint time;//出资时间
+        uint256 repaid;//已偿还金额
     }
 
     mapping(address=>bool) public users;//已注册用户
@@ -252,6 +253,7 @@ contract Loan is Ownable{
             Contribution[] storage cons = contribution[pid];
             for( uint i = 0 ; i < cons.length ; i++ ){
                 uint money = totalRepay * ( cons[i].amount /  p.collected ) ;
+                cons[i].repaid += money;
                 (bool success, ) = cons[i].investor.call{value:money}("");
                 require(success,"Failed to repay funds to investors");
             }

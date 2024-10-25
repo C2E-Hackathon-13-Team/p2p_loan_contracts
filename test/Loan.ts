@@ -46,7 +46,7 @@ describe("Loan", function () {
         console.log(r)
     });
 
-    it("出资", async function () {
+    it.only("出资", async function () {
         const r1 = await loan.connect(investor1).contribute(0,{ value: 3000 })
         console.log(r1)
         const r2 = await loan.connect(investor2).contribute(0,{ value: 5000 })
@@ -54,22 +54,24 @@ describe("Loan", function () {
     });
 
 
-    it.only("查看用户发起过的项目", async function () {
+    it("查看用户发起过的项目", async function () {
         console.log(lancher.address)
         const r = await loan.connect(lancher).getLaunchProjects(lancher.address)
         console.log(r)
     });
 
-    it.only('查看用户出资过的项目',async function(){
+    it('查看用户出资过的项目',async function(){
         const r1 = await loan.connect(investor1).getContributeProjects(investor1.address)
         console.log(r1)
         const r2 = await loan.connect(investor2).getContributeProjects(investor2.address)
         console.log(r2)
     })
 
-    it.only('查询所有出资单',async function(){
-        const r1 = await loan.connect(owner).contribution(0,0)
-        console.log(r1)
+    it('查询所有出资单',async function(){
+        let r = await loan.connect(owner).contribution(0,0)
+        console.log(r)
+        r = await loan.connect(owner).contribution(0,1)
+        console.log(r)
     })
 
     
