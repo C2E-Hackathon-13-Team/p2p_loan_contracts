@@ -56,14 +56,11 @@ describe("Loan", function () {
 
     it.only("查看用户发起过的项目", async function () {
         console.log(lancher.address)
-        // const r = await loan.connect(lancher).getLaunchProjects(lancher.address)
-
-        const r = await loan.connect(lancher).launchProjects(lancher.address,0)
-        
+        const r = await loan.connect(lancher).getLaunchProjects(lancher.address)
         console.log(r)
     });
 
-    it('查看用户出资过的项目',async function(){
+    it.only('查看用户出资过的项目',async function(){
         const r1 = await loan.connect(investor1).getContributeProjects(investor1.address)
         console.log(r1)
 

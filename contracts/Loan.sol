@@ -120,9 +120,10 @@ contract Loan is Ownable{
 
 
         Project storage pro = projects[pid];
-        require( pro.status == 1 && block.timestamp > pro.collectEndTime , "Confirmation operations can only be performed when the project is in a pending confirmation state");
         require( pro.launcher == msg.sender , "Only the initiator can confirm the project");
         require( pro.collected > 0 , "Only projects with raised funds greater than 0 can be confirmed");
+        require( pro.status == 1  , "Confirmation operations can only be performed when the project is in a pending confirmation state");
+        require( block.timestamp > pro.collectEndTime || pro.collected >= pro.amount ,"Only projects that reach the deadline or finish raising funds early will be recognized.")
         pro.status = 2;
 
 
