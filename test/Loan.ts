@@ -21,8 +21,8 @@ describe("Loan", function () {
     let lancher;
     let investor1;
     let investor2;
-    let amount:BigInt     = 4000000000000n;
-    let halfAmount:BigInt = 2000000000000n;
+    let amount:BigInt     = 300n;
+    let halfAmount:BigInt = 150n;
 
     
 
@@ -30,7 +30,7 @@ describe("Loan", function () {
         let chainId = hre.network.config.chainId
         let filePath = path.join(__dirname, '../ignition/deployments/chain-'+chainId+'/deployed_addresses.json')
         const data = fs.readFileSync( filePath , "utf8" );
-        let deployedAddr = JSON.parse(data);
+        let deployedAddr:DeployedAddresses = JSON.parse(data);
         loan = await hre.ethers.getContractAt('Loan',deployedAddr['LockModule#Loan']);
         [owner,lancher,investor1,investor2] = await hre.ethers.getSigners();
         
@@ -40,26 +40,26 @@ describe("Loan", function () {
 
 
 
-    it.only("新增项目", async function () {
+    it("新增项目", async function () {
         let current = Math.floor(Date.now() / 1000);
         current += 25 * 60 *60;
-        const r = await loan.connect(lancher).createProject( amount , 0.08*1000000 , 5 , current , 1 )
+        const r = await loan.connect(lancher).createProject( amount , 0.06*1000000 , 5 , current , 1 )
         console.log(r)
     });
 
-    it.only("出资", async function () {
+    it("出资", async function () {
         const r1 = await loan.connect(investor1).contribute(0,{ value: halfAmount })
         console.log(r1)
         const r2 = await loan.connect(investor2).contribute(0,{ value: halfAmount })
         console.log(r2)
     });
 
-    it.only("确认", async function () {
+    it("确认", async function () {
         const r1 = await loan.connect(lancher).confirm(0,{gasLimit: 30000000})
         console.log(r1)
     });
 
-    it.only("还款", async function () {
+    it("还款", async function () {
         console.log("等待还款中，请稍后……")
 
         let flg=true
@@ -87,12 +87,12 @@ describe("Loan", function () {
         
     });
 
-    it.only('查询项目',async function(){
+    it('查询项目',async function(){
         let r = await loan.projects(0)
         console.log(r)
     })
 
-    it.only("查看账户余额", async function () {
+    it("查看账户余额", async function () {
         console.log('loan balance = ',await hre.ethers.provider.getBalance(owner.address));
         console.log('owner balance = ',await hre.ethers.provider.getBalance(owner.address));
         console.log('lancher balance = ',await hre.ethers.provider.getBalance(lancher.address));
@@ -101,7 +101,7 @@ describe("Loan", function () {
     });
 
 
-    it("查看用户发起过的项目", async function () {
+    it.only("查看用户发起过的项目", async function () {
         console.log(lancher.address)
         const r = await loan.connect(lancher).getLaunchProjects(lancher.address)
         console.log(r)

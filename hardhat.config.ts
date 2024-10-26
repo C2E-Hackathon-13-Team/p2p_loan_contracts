@@ -2,6 +2,7 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import * as dotenv from "dotenv";
 
+console.log("==========>",`./.env.${process.env.NODE_ENV}`)
 dotenv.config({ path: `./.env.${process.env.NODE_ENV}` });
 
 const config: HardhatUserConfig = {
@@ -29,7 +30,7 @@ const config: HardhatUserConfig = {
     sepolia: {
       url: 'https://rpc.sepolia.org',
       chainId: 11155111,
-      accounts: [process.env.OWNER_PRIVATE_KEY]
+      accounts: [process.env.OWNER_PRIVATE_KEY,process.env.LAUNCHER_PRIVATE_KEY,process.env.INVESTOR1_PRIVATE_KEY,process.env.INVESTOR2_PRIVATE_KEY]
     },
   }
 };
