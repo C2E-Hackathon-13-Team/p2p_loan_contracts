@@ -9,3 +9,4 @@ deploy-local:
 	@NODE_ENV=local npx hardhat ignition deploy ./ignition/modules/Loan.ts --network local
 test-local:
 	@NODE_ENV=local npx hardhat test --network local  ./test/Loan.ts
+
