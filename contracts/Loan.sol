@@ -323,4 +323,6 @@ contract Loan is Ownable{
     function getAllProjects() public view returns (Project[] memory) {
         return projects;
     }
+
+
 }
