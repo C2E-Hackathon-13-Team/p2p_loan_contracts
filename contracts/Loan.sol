@@ -319,5 +319,8 @@ contract Loan is Ownable{
         return getProjectsByIds(contributeProjects[addr]);
     }
     
-
+    // 获取所有项目信息
+    function getAllProjects() public view returns (Project[] memory) {
+        return projects;
+    }
 }
