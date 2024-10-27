@@ -1,11 +1,13 @@
 
 import { expect } from "chai";
+// import hre from "hardhat";
 import hre from "hardhat";
 import * as fs from "fs";
 import * as path from "path"
 
 
 
+// const { ethers } = require("hardhat");
 
 interface DeployedAddresses {
     [key: string]: string; 
@@ -21,8 +23,8 @@ describe("Loan", function () {
     let lancher;
     let investor1;
     let investor2;
-    let amount:BigInt     = 300n;
-    let halfAmount:BigInt = 150n;
+    let amount  = hre.ethers.parseUnits("2477856", 18);;
+    let halfAmount:BigInt = amount / 2n
 
     
 
@@ -40,7 +42,7 @@ describe("Loan", function () {
 
 
 
-    it("新增项目", async function () {
+    it.only("新增项目", async function () {
         let current = Math.floor(Date.now() / 1000);
         current += 25 * 60 *60;
         const r = await loan.connect(lancher).createProject( amount , 0.06*1000000 , 5 , current , 1 )
@@ -101,7 +103,7 @@ describe("Loan", function () {
     });
 
 
-    it.only("查看用户发起过的项目", async function () {
+    it("查看用户发起过的项目", async function () {
         console.log(lancher.address)
         const r = await loan.connect(lancher).getLaunchProjects(lancher.address)
         console.log(r)

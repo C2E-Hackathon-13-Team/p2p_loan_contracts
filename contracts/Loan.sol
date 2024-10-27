@@ -3,6 +3,7 @@ pragma solidity 0.8.27;
 import "hardhat/console.sol";
 
 import "./utils/ABDKMath/ABDKMath64x64.sol";
+import "./utils/ABDKMath/ABDKMathQuad.sol";
 import "./utils/BokkyPooBahsDateTime/BokkyPooBahsDateTimeLibrary.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -130,7 +131,6 @@ contract Loan is Ownable{
         if(block.timestamp < pro.collectEndTime){
             pro.collectEndTime = block.timestamp;
         }
-
         
         //月利率*1000000
         uint rateMonthly = ABDKMath64x64.toUInt(
@@ -139,6 +139,7 @@ contract Loan is Ownable{
 
         //每月还款额
         uint repayMonthly = getRepayMonthly(pro.collected,pro.rate,pro.term);
+        
         
         Bill[] storage bs = bills[pid];
         uint remaining = pro.collected;//剩余本金
@@ -165,7 +166,7 @@ contract Loan is Ownable{
                 remaining = 0;
 
             }else{
-
+                
                 remaining = remaining - capital;
 
             }
@@ -198,10 +199,18 @@ contract Loan is Ownable{
     */
     function getRepayMonthly(uint _collected,uint _rate,uint256 _term) private pure returns(uint){
 
+        uint i = 1;
+        uint amount = _collected;
+        while(amount >= 0x7FFFFFFFFFFFFFFF){
+            amount = amount / 10;
+            i = i * 10;
+        }
+
         // 转换为定点数
-        int128 amount128 = ABDKMath64x64.fromUInt(_collected);//总金额
+        int128 amount128 = ABDKMath64x64.fromUInt(amount);//总金额
         int128 yearRate128 = ABDKMath64x64.div(ABDKMath64x64.fromUInt(_rate),ABDKMath64x64.fromUInt(1000000));//年利率
         int128 mr128 = ABDKMath64x64.div(yearRate128,ABDKMath64x64.fromInt(12));//月利率
+
 
         //（1+月利率）
         int128 num1 = ABDKMath64x64.add(ABDKMath64x64.fromInt(1),mr128);
@@ -216,7 +225,7 @@ contract Loan is Ownable{
         //每月还款额
         int128 num6 = ABDKMath64x64.div(num4,num5);
 
-        return ABDKMath64x64.toUInt(num6);
+        return ABDKMath64x64.toUInt(num6) * i;
     }
 
     event Repay(uint pid,address addr,uint totalRepay,uint status);
