@@ -335,18 +335,15 @@ contract Loan is Ownable{
         return projects;
     }
 
-<<<<<<< HEAD
     //获取出资单
     function getContributionsByPid(uint pid) external view returns(Contribution[] memory){
         return contribution[pid];
     }
-
-=======
+    
     // 获取单个项目账单
     function getBill(uint pid) public view returns (Bill[] memory) {
         require(bills[pid].length > 0, "No bills for this project");
         return bills[pid];
     }
->>>>>>> d2bc632e19b8607ac5b7f06ac5cc912840bf9e16
 
 }
