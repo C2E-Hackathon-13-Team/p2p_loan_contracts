@@ -127,10 +127,8 @@ describe("Loan", function () {
         console.log(r2)
     })
 
-    it('查询所有出资单',async function(){
-        let r = await loan.connect(owner).contribution(0,0)
-        console.log(r)
-        r = await loan.connect(owner).contribution(0,1)
+    it.only('查询所有出资单',async function(){
+        let r = await loan.connect(owner).getContributionsByPid(0)
         console.log(r)
     })
 

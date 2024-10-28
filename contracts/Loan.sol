@@ -266,10 +266,12 @@ contract Loan is Ownable{
 
         //转账至出资人
         uint totalRepay = msg.value - msgVal;
+        console.log("totalRepay=>",totalRepay);
         if(totalRepay > 0){
             Contribution[] storage cons = contribution[pid];
             for( uint i = 0 ; i < cons.length ; i++ ){
-                uint money = totalRepay * ( cons[i].amount /  p.collected ) ;
+                uint money = totalRepay * ( cons[i].amount * 1e36 /  p.collected ) / 1e36 ;
+                console.log("money=>",money);
                 cons[i].repaid += money;
                 (bool success, ) = cons[i].investor.call{value:money}("");
                 require(success,"Failed to repay funds to investors");
@@ -339,7 +341,7 @@ contract Loan is Ownable{
     function getContributionsByPid(uint pid) external view returns(Contribution[] memory){
         return contribution[pid];
     }
-    
+
     // 获取单个项目账单
     function getBill(uint pid) public view returns (Bill[] memory) {
         require(bills[pid].length > 0, "No bills for this project");
