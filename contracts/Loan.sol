@@ -333,5 +333,10 @@ contract Loan is Ownable{
         return projects;
     }
 
+    // 获取单个项目账单
+    function getBill(uint pid) public view returns (Bill[] memory) {
+        require(bills[pid].length > 0, "No bills for this project");
+        return bills[pid];
+    }
 
 }
