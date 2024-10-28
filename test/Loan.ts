@@ -23,8 +23,9 @@ describe("Loan", function () {
     let lancher;
     let investor1;
     let investor2;
-    let amount  = hre.ethers.parseUnits("2477856", 18);;
+    let amount  = hre.ethers.parseUnits("244", 18);;
     let halfAmount:BigInt = amount / 2n
+    let projectId;
 
     
 
@@ -41,23 +42,33 @@ describe("Loan", function () {
 
 
 
-
     it.only("新增项目", async function () {
+
+        loan.on("CreateProject", (pid, event) => projectId = pid);
+
         let current = Math.floor(Date.now() / 1000);
         current += 25 * 60 *60;
-        const r = await loan.connect(lancher).createProject( amount , 0.06*1000000 , 5 , current , 1 )
-        console.log(r)
+        const tx = await loan.connect(lancher).createProject( amount , 0.06*1000000 , 5 , current , 1 )
+        const r = await tx.wait();
+        console.log(r);
+        while(projectId == undefined) await sleep(1000);
+       
     });
 
-    it("出资", async function () {
-        const r1 = await loan.connect(investor1).contribute(0,{ value: halfAmount })
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    it.only("出资", async function () {
+        const r1 = await loan.connect(investor1).contribute(projectId,{ value: halfAmount })
         console.log(r1)
-        const r2 = await loan.connect(investor2).contribute(0,{ value: halfAmount })
+        const r2 = await loan.connect(investor2).contribute(projectId,{ value: halfAmount })
         console.log(r2)
+        
     });
 
     it("确认", async function () {
-        const r1 = await loan.connect(lancher).confirm(0,{gasLimit: 30000000})
+        const r1 = await loan.connect(lancher).confirm(projectId,{gasLimit: 30000000})
         console.log(r1)
     });
 
@@ -74,7 +85,7 @@ describe("Loan", function () {
         while(flg){
             try {
                 
-                await loan.connect(lancher).repay(0,{ value: halfAmount })
+                await loan.connect(lancher).repay(projectId,{ value: halfAmount })
                 
             } catch (error) {
                 

@@ -61,6 +61,7 @@ contract Loan is Ownable{
     receive() external payable {}
 
     //新增项目
+    event CreateProject(uint pid);
     function createProject(uint256 _amount,uint256 _rate,uint256 _term,uint256 _collectEndTime,uint8 _repayMethod)  external  {
         
         require(_amount > 0,"amount must bigger than 0");
@@ -84,6 +85,7 @@ contract Loan is Ownable{
         ));
         
         launchProjects[msg.sender].push(pid);
+        emit CreateProject(pid);
         
     }
 
@@ -331,6 +333,11 @@ contract Loan is Ownable{
     // 获取所有项目信息
     function getAllProjects() public view returns (Project[] memory) {
         return projects;
+    }
+
+    //获取出资单
+    function getContributionsByPid(uint pid) external view returns(Contribution[] memory){
+        return contribution[pid];
     }
 
 
