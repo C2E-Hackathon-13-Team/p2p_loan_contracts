@@ -48,7 +48,7 @@ contract Loan is Ownable{
         uint256 repaid;//已偿还金额
     }
 
-    mapping(address=>bool) public users;//已注册用户
+    mapping(address=>bool) public launchers;//已注册筹资人
     mapping(address=>uint256) public creditScore;//信用金
 
     Project[] public projects;//所有筹资项目
