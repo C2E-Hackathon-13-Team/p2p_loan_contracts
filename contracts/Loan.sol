@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.27;
+pragma solidity 0.8.26;
 import "hardhat/console.sol";
 
 import "./utils/ABDKMath/ABDKMath64x64.sol";

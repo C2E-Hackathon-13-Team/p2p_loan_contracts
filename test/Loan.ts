@@ -42,7 +42,7 @@ describe("Loan", function () {
 
 
 
-    it.only("新增项目", async function () {
+    it("新增项目", async function () {
 
         loan.on("CreateProject", (pid, event) => projectId = pid);
 
@@ -59,7 +59,7 @@ describe("Loan", function () {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    it.only("出资", async function () {
+    it("出资", async function () {
         const r1 = await loan.connect(investor1).contribute(projectId,{ value: halfAmount })
         console.log(r1)
         const r2 = await loan.connect(investor2).contribute(projectId,{ value: halfAmount })
@@ -105,12 +105,11 @@ describe("Loan", function () {
         console.log(r)
     })
 
-    it("查看账户余额", async function () {
-        console.log('loan balance = ',await hre.ethers.provider.getBalance(owner.address));
-        console.log('owner balance = ',await hre.ethers.provider.getBalance(owner.address));
-        console.log('lancher balance = ',await hre.ethers.provider.getBalance(lancher.address));
-        console.log('investor1 balance = ',await hre.ethers.provider.getBalance(investor1.address));
-        console.log('investor2 balance = ',await hre.ethers.provider.getBalance(investor2.address));
+    it.only("查看账户余额", async function () {
+        console.log('owner balance = ',hre.ethers.formatEther(await hre.ethers.provider.getBalance(owner.address)));
+        console.log('lancher balance = ',hre.ethers.formatEther(await hre.ethers.provider.getBalance(lancher.address)));
+        console.log('investor1 balance = ',hre.ethers.formatEther(await hre.ethers.provider.getBalance(investor1.address)));
+        console.log('investor2 balance = ',hre.ethers.formatEther(await hre.ethers.provider.getBalance(investor2.address)));
     });
 
 
@@ -127,7 +126,7 @@ describe("Loan", function () {
         console.log(r2)
     })
 
-    it.only('查询所有出资单',async function(){
+    it('查询所有出资单',async function(){
         let r = await loan.connect(owner).getContributionsByPid(0)
         console.log(r)
     })
