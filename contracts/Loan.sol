@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Loan is Ownable{
-
     //owner会抽取手续费，功能后期在加。
     constructor() Ownable(msg.sender) {}
     
