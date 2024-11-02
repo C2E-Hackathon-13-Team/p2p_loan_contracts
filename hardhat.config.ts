@@ -7,7 +7,7 @@ dotenv.config({ path: `./.env.${process.env.NODE_ENV}` });
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.27",
+    version: "0.8.26",
     settings: {
       viaIR: true,
       optimizer: {

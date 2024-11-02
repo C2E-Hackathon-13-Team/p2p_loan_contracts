@@ -41,8 +41,13 @@ describe("Loan", function () {
     })
 
 
+    it.only("注册筹资人", async function () {
+        const tx = await loan.connect(owner).registerLauncher(lancher);
+        const r = await tx.wait();
+        console.log(r);
+    });
 
-    it("新增项目", async function () {
+    it.only("新增项目", async function () {
 
         loan.on("CreateProject", (pid, event) => projectId = pid);
 
@@ -105,7 +110,7 @@ describe("Loan", function () {
         console.log(r)
     })
 
-    it.only("查看账户余额", async function () {
+    it("查看账户余额", async function () {
         console.log('owner balance = ',hre.ethers.formatEther(await hre.ethers.provider.getBalance(owner.address)));
         console.log('lancher balance = ',hre.ethers.formatEther(await hre.ethers.provider.getBalance(lancher.address)));
         console.log('investor1 balance = ',hre.ethers.formatEther(await hre.ethers.provider.getBalance(investor1.address)));
@@ -113,7 +118,7 @@ describe("Loan", function () {
     });
 
 
-    it("查看用户发起过的项目", async function () {
+    it.only("查看用户发起过的项目", async function () {
         console.log(lancher.address)
         const r = await loan.connect(lancher).getLaunchProjects(lancher.address)
         console.log(r)

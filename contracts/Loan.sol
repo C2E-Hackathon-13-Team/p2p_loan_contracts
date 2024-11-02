@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Loan is Ownable{
+
     //owner会抽取手续费，功能后期在加。
     constructor() Ownable(msg.sender) {}
     
@@ -59,9 +60,23 @@ contract Loan is Ownable{
 
     receive() external payable {}
 
+    //仅已注册的筹资人才能执行
+    modifier onlyRegisterLauncher {
+        require(launchers[msg.sender],"Only registered fundraisers can operate");
+        _;
+    }
+
+    
+    //注册筹资人
+    event RegisterLauncher(address addr);
+    function registerLauncher(address  addr) external onlyOwner{
+        launchers[addr] = true;
+        emit RegisterLauncher(addr);
+    }
+
     //新增项目
     event CreateProject(uint pid);
-    function createProject(uint256 _amount,uint256 _rate,uint256 _term,uint256 _collectEndTime,uint8 _repayMethod)  external  {
+    function createProject(uint256 _amount,uint256 _rate,uint256 _term,uint256 _collectEndTime,uint8 _repayMethod)  external onlyRegisterLauncher  {
         
         require(_amount > 0,"amount must bigger than 0");
         require(_term > 0,"term must bigger than 0");
@@ -89,6 +104,7 @@ contract Loan is Ownable{
     }
 
     //出资
+    event Contribute(uint pid,address investor,uint value);
     function contribute(uint pid) external payable {
         Project storage p = projects[pid];
         require( p.status == 1 && block.timestamp < p.collectEndTime, "Only projects in the funding phase can receive funding");
@@ -99,10 +115,12 @@ contract Loan is Ownable{
         contribution[pid].push(Contribution(msg.sender,msg.value,block.timestamp,0));
         p.collected += msg.value;
         contributeProjects[msg.sender].push(pid);
+        emit Contribute(pid,msg.sender,msg.value);
     }
 
     //撤销项目
-    function revocateProject(uint pid) external{
+    event RevocateProject(uint pid);
+    function revocateProject(uint pid) external {
         Project storage p = projects[pid];
         require( p.launcher == msg.sender , "Only the project initiator can cancel the project");
         require( p.status == 1 , "Only projects in the funding period and pending confirmation stage can be cancelled");
@@ -114,10 +132,12 @@ contract Loan is Ownable{
         }
 
         p.status = 4; 
+        emit RevocateProject(pid);
     }
 
 
     //确认项目。进入还款期,发放贷款,并生成账单
+    event Confirm(uint pid);
     function confirm(uint pid) external {
 
         Project storage pro = projects[pid];
@@ -192,6 +212,7 @@ contract Loan is Ownable{
         
         (bool success, ) = msg.sender.call{value:pro.collected}("");
         require(success,"Failure to issue loan");
+        emit Confirm(pid);
         
     }
 
@@ -229,9 +250,10 @@ contract Loan is Ownable{
         return ABDKMath64x64.toUInt(num6) * i;
     }
 
-    event Repay(uint pid,address addr,uint totalRepay,uint status);
+    
 
     //还款
+    event Repay(uint pid,address addr,uint totalRepay,uint status);
     function repay(uint pid) external payable {
         Project storage p = projects[pid];
         require( p.status == 2 , "Only projects that have entered the repayment period can be repaid.");
