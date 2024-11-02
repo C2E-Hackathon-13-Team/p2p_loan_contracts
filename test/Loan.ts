@@ -41,7 +41,7 @@ describe("Loan", function () {
     })
 
 
-    it.only("注册筹资人", async function () {
+    it("注册筹资人", async function () {
         const tx = await loan.connect(owner).registerLauncher(lancher);
         const r = await tx.wait();
         console.log(r);

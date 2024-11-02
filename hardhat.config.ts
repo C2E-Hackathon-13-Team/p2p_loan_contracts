@@ -2,7 +2,7 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import * as dotenv from "dotenv";
 
-console.log("==========>",`./.env.${process.env.NODE_ENV}`)
+
 dotenv.config({ path: `./.env.${process.env.NODE_ENV}` });
 
 const config: HardhatUserConfig = {
